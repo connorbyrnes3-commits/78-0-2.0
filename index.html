@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>78-0 Draft Battle - Multiplayer</title>
+<style>
+:root{
+  --bg:#07101f;
+  --panel:#101a33;
+  --panel2:#0c1428;
+  --line:#243255;
+  --gold:#ffd24a;
+  --text:#f4f7ff;
+  --muted:#aab5d6;
+  --good:#69f0ae;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(180deg,#07101f,#0b1630 60%,#07101f);
+  color:var(--text);
+  overflow-x:hidden;
+}
+.wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding:20px;
+  position:relative;
+  z-index:1;
+}
+h1{
+  margin:0 0 8px;
+  font-size:64px;
+  letter-spacing:.08em;
+  text-align:center;
+  font-weight:900;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:16px;
+}
+.card{
+  background:rgba(16,26,51,.95);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  position:relative;
+  overflow:hidden;
+}
+.row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+button{
+  border:0;
+  border-radius:12px;
+  padding:11px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.primary{
+  background:var(--gold);
+  color:#111;
+}
+.secondary{
+  background:#15213d;
+  color:var(--text);
+  border:1px solid var(--line);
+}
+.badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#1b2745;
+  color:var(--muted);
+  margin:4px 6px 0 0;
+  font-size:13px;
+}
+.small{
+  color:var(--muted);
+  font-size:14px;
+}
+.hidden{display:none}
+.list button{
+  width:100%;
+  text-align:left;
+  margin:6px 0;
+  background:#15213d;
+  color:var(--text);
+  border:1px solid var(--line);
+}
+.lobbyCard{
+  background:rgba(16,26,51,.95);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  max-width:500px;
+  margin:60px auto;
+  text-align:center;
+}
+.lobbyCard h2{
+  margin-top:0;
+  margin-bottom:20px;
+}
+.lobbyCard input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#0b1325;
+  color:var(--text);
+  font-size:14px;
+}
+.lobbyCard input::placeholder{
+  color:var(--muted);
+}
+.roomCode{
+  font-size:32px;
+  font-weight:900;
+  color:var(--gold);
+  margin:20px 0;
+  letter-spacing:4px;
+}
+.roomCodeLabel{
+  font-size:12px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:2px;
+}
+.slotWrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:14px;
+}
+.slot{
+  background:#0b1325;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  text-align:center;
+  overflow:hidden;
+  position:relative;
+}
+.slotLabel{
+  font-size:12px;
+  color:var(--muted);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.reel{
+  height:64px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:30px;
+  font-weight:900;
+  line-height:1;
+  border-radius:10px;
+  background:linear-gradient(180deg,#15213d,#101a33);
+  position:relative;
+  transform:translateZ(0);
+}
+.reel.spinning{
+  animation:reelPulse .18s linear infinite, reelGlow .5s ease-in-out infinite alternate;
+}
+.reel.spinning::after{
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:12px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  animation:sheen .8s linear infinite;
+  pointer-events:none;
+}
+.flash{margin-top:12px;color:#fff}
+.spinCard{position:relative}
+.spinCard.shake{animation:shake .55s cubic-bezier(.36,.07,.19,.97) both}
+.turnIndicator{
+  padding:12px;
+  background:rgba(255,210,74,.1);
+  border:1px solid var(--gold);
+  border-radius:8px;
+  margin-bottom:12px;
+  color:var(--gold);
+  font-weight:700;
+}
+.turnIndicator.p2{
+  background:rgba(255,125,209,.1);
+  border-color:#ff7bd1;
+  color:#ff7bd1;
+}
+.waiting{
+  padding:12px;
+  background:rgba(106,240,174,.1);
+  border:1px solid var(--good);
+  border-radius:8px;
+  color:var(--good);
+  font-weight:700;
+  text-align:center;
+}
+.finalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(4,9,22,.92);
+  backdrop-filter:blur(2px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .7s ease;
+}
+.finalOverlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.finalPanel{
+  width:min(560px,92vw);
+  background:linear-gradient(180deg,rgba(16,26,51,.98),rgba(10,18,38,.98));
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  position:relative;
+  overflow:hidden;
+  max-height:90vh;
+  overflow-y:auto;
+}
+.finalPanel::before{
+  content:'';
+  position:absolute;
+  inset:-30%;
+  background:radial-gradient(circle at top,rgba(255,210,74,.14),transparent 50%);
+  pointer-events:none;
+}
+.confettiLayer{
+  position:fixed;
+  inset:0;
+  z-index:25;
+  pointer-events:none;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity .8s ease;
+}
+.confettiLayer.show{opacity:1}
+.confetti{
+  position:absolute;
+  top:-12px;
+  width:10px;
+  height:18px;
+  border-radius:2px;
+  animation:fall linear forwards;
+  will-change:transform,opacity;
+}
+.finalCompare{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+.finalPlayer{
+  background:rgba(12,20,40,.9);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  position:relative;
+}
+.finalPlayer.winner{
+  border-color:var(--gold);
+  box-shadow:0 0 12px rgba(255,210,74,.2);
+}
+.finalPlayerName{
+  font-weight:800;
+  font-size:16px;
+  margin-bottom:12px;
+  color:var(--gold);
+}
+.finalPlayerDraft{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:12px;
+}
+.finalDraftItem{
+  background:rgba(7,16,31,.8);
+  border:1px solid #223055;
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:12px;
+}
+.finalDraftName{
+  font-weight:700;
+}
+.finalDraftMeta{
+  color:var(--muted);
+  font-size:11px;
+}
+.finalScore{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:1px solid #223055;
+  padding-top:12px;
+}
+.finalScoreLabel{
+  font-size:12px;
+  color:var(--muted);
+}
+.finalScoreNum{
+  font-size:28px;
+  font-weight:900;
+  color:var(--gold);
+}
+.winnerBanner{
+  text-align:center;
+  padding:16px;
+  background:rgba(255,210,74,.1);
+  border:1px solid var(--gold);
+  border-radius:12px;
+  margin-bottom:16px;
+  color:var(--gold);
+  font-weight:800;
+  font-size:18px;
+}
+.saveRow{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:2px;
+}
+.p1Board{color:#7ec8ff}
+.p2Board{color:#ff7bd1}
+.connectionStatus{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  padding:8px 12px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:700;
+}
+.connectionStatus.connected{
+  background:#69f0ae;
+  color:#07101f;
+}
+.connectionStatus.disconnected{
+  background:#ff6b6b;
+  color:#fff;
+}
+@media (max-width:900px){
+  .grid{grid-template-columns:1fr}
+  .slotWrap{grid-template-columns:1fr}
+  .finalCompare{grid-template-columns:1fr}
+}
+@keyframes shake{
+  10%,90%{transform:translate3d(-1px,0,0)}
+  20%,80%{transform:translate3d(2px,0,0)}
+  30%,50%,70%{transform:translate3d(-4px,0,0)}
+  40%,60%{transform:translate3d(4px,0,0)}
+}
+@keyframes reelPulse{
+  0%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-1px) scale(1.01)}
+  100%{transform:translateY(0) scale(1)}
+}
+@keyframes reelGlow{
+  from{filter:brightness(1)}
+  to{filter:brightness(1.2)}
+}
+@keyframes sheen{
+  from{transform:translateX(-100%)}
+  to{transform:translateX(100%)}
+}
+@keyframes fall{
+  0%{transform:translate3d(var(--x,0),-20px,0) rotate(0deg);opacity:1}
+  100%{transform:translate3d(calc(var(--x,0) + var(--drift,0px)),110vh,0) rotate(720deg);opacity:0}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js"></script>
+</head>
+<body>
+<div class="confettiLayer" id="confettiLayer"></div>
+<div class="connectionStatus" id="connectionStatus">● Connecting...</div>
+
+<div class="wrap">
+  <h1 id="topTitle">78-0 Draft Battle</h1>
+
+  <!-- LOBBY SCREEN -->
+  <div id="lobbyScreen" class="lobbyCard">
+    <h2>Welcome to Draft Battle</h2>
+    <div style="margin-bottom:30px">
+      <button type="button" class="primary" style="width:100%" data-action="showCreate">Create Game</button>
+      <div style="margin:20px 0;color:var(--muted)">— or —</div>
+      <button type="button" class="secondary" style="width:100%" data-action="showJoin">Join Game</button>
+    </div>
+    <div id="createSection" class="hidden">
+      <input type="text" id="createName" placeholder="Your Name" />
+      <button type="button" class="primary" style="width:100%" data-action="createGame">Create & Start</button>
+      <button type="button" class="secondary" style="width:100%;margin-top:8px" data-action="backToLobby">Back</button>
+    </div>
+    <div id="joinSection" class="hidden">
+      <input type="text" id="playerName" placeholder="Your Name" />
+      <input type="text" id="roomCode" placeholder="Room Code (e.g., ABC123)" maxlength="6" style="text-transform:uppercase" />
+      <button type="button" class="primary" style="width:100%" data-action="joinGame">Join Game</button>
+      <button type="button" class="secondary" style="width:100%;margin-top:8px" data-action="backToLobby">Back</button>
+    </div>
+    <div id="waitingSection" class="hidden">
+      <div class="roomCodeLabel">Your Room Code</div>
+      <div class="roomCode" id="displayRoomCode">ABC123</div>
+      <div class="waiting">Waiting for opponent to join...</div>
+      <button type="button" class="secondary" style="width:100%;margin-top:16px" data-action="backToLobby">Cancel</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="grid hidden" style="margin-top:16px">
+    <div class="card spinCard" id="mainCard">
+      <div id="turnIndicator" class="turnIndicator">Your Turn - Pick #<span id="pickNum">1</span></div>
+      <div id="opponentWaitingMsg" class="waiting hidden">Opponent is selecting...</div>
+      
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 id="turnTitle" style="margin:6px 0 0">&nbsp;</h2>
+        </div>
+        <div>
+          <button type="button" class="primary" data-action="spin" id="spinBtn">Spin Wheel</button>
+        </div>
+      </div>
+
+      <div id="wheelBox" class="card hidden" style="margin-top:14px;background:var(--panel2)">
+        <div class="slotWrap">
+          <div class="slot">
+            <div class="slotLabel">Season</div>
+            <div id="seasonReel" class="reel">fall</div>
+          </div>
+          <div class="slot">
+            <div class="slotLabel">Year</div>
+            <div id="yearReel" class="reel">2021</div>
+          </div>
+        </div>
+        <div id="spinMsg" class="flash small"></div>
+      </div>
+
+      <div id="poolBox" class="card hidden" style="margin-top:14px;background:var(--panel2)"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Draft Board</h2>
+      <div id="p1Board" class="p1Board" style="margin-bottom:16px">
+        <div style="font-weight:700;margin-bottom:8px" id="p1Label">Player 1</div>
+        <div id="p1Picks" class="small">No picks yet.</div>
+      </div>
+      <div id="p2Board" class="p2Board">
+        <div style="font-weight:700;margin-bottom:8px" id="p2Label">Player 2</div>
+        <div id="p2Picks" class="small">No picks yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="revealCard" class="finalOverlay hidden">
+    <div class="finalPanel" id="finalCapture">
+      <div class="winnerBanner" id="winnerBanner"></div>
+      <div class="finalCompare" id="finalCompare"></div>
+      <div class="saveRow">
+        <button type="button" class="primary" data-action="saveImage">Save Image</button>
+        <button type="button" class="primary" data-action="backToLobby">New Game</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Initialize Firebase - YOU NEED TO SET UP YOUR FIREBASE PROJECT
+// Go to https://firebase.google.com and create a project, then replace these values
+const firebaseConfig = {
+  apiKey: "AIzaSyDvoXpZN4xJKr1h790kKkJDXl0KRjJlwfY",
+  authDomain: "project-8634685858498639557.firebaseapp.com",
+  databaseURL: "https://project-8634685858498639557-default-rtdb.firebaseio.com",
+  projectId: "project-8634685858498639557",
+  storageBucket: "project-8634685858498639557.firebasestorage.app",
+  messagingSenderId: "764942226267",
+  appId: "1:764942226267:web:4f568bff4042aec3edc07e"
+};
+
+let db, myPlayerId = '', myPlayerNum = 0, roomCode = '', playerName = '', gameState = null;
+let isInitialized = false;
+
+// Initialize Firebase
+try {
+  const app = firebase.initializeApp(firebaseConfig);
+  db = firebase.database(app);
+  updateConnectionStatus(true);
+} catch(e) {
+  console.error('Firebase config needed. See instructions in code.');
+  updateConnectionStatus(false);
+}
+
+const roster = [
+  {name:'Ryan Boyd', year:2017, sem:'fall', ovr:81},{name:'Antonio Carletti', year:2017, sem:'fall', ovr:82},{name:'Andrew Cartwright', year:2017, sem:'fall', ovr:93},{name:'Michael Delaney', year:2017, sem:'fall', ovr:83},{name:'Cam Gately', year:2017, sem:'fall', ovr:86},{name:'Matthew Hartz', year:2017, sem:'fall', ovr:91},{name:'Drew Jacobs', year:2017, sem:'fall', ovr:87},{name:'Dan Johnson', year:2017, sem:'fall', ovr:97},{name:'Ryan Kormos', year:2017, sem:'fall', ovr:87},{name:'Brandon Lange', year:2017, sem:'fall', ovr:88},{name:'Kyle MacDougall', year:2017, sem:'fall', ovr:83},{name:'Conor McAdoo', year:2017, sem:'fall', ovr:85},{name:'Zach Messerle', year:2017, sem:'fall', ovr:80},{name:'Luke Midock', year:2017, sem:'fall', ovr:86},{name:'Chris Rogers', year:2017, sem:'fall', ovr:81},{name:'Brian Walsh', year:2017, sem:'fall', ovr:84},
+  {name:'Avery Choi', year:2018, sem:'spring', ovr:87},{name:"Lewis D'Ippolito", year:2018, sem:'spring', ovr:79},{name:'Mark DiGiovanni', year:2018, sem:'spring', ovr:71},{name:'Simeon Kofman', year:2018, sem:'spring', ovr:69},{name:'Henry Minning', year:2018, sem:'spring', ovr:74},{name:'Ram Thatham', year:2018, sem:'spring', ovr:74},{name:'David Zurowski', year:2018, sem:'spring', ovr:89},
+  {name:'Mike Medica', year:2018, sem:'fall', ovr:96},{name:'Tommy Ricci', year:2018, sem:'fall', ovr:93},{name:'Tyler Ellis', year:2018, sem:'fall', ovr:95},{name:'Trey Fruncillo', year:2018, sem:'fall', ovr:87},{name:'Pete Moeller', year:2018, sem:'fall', ovr:88},{name:'Alejandro Giraldo', year:2018, sem:'fall', ovr:88},{name:'Andrew Hanson', year:2018, sem:'fall', ovr:87},{name:'Matt Lipsit', year:2018, sem:'fall', ovr:85},
+  {name:'Todd Walter', year:2019, sem:'spring', ovr:84},{name:'Gabe Mauro', year:2019, sem:'spring', ovr:79},{name:'Jared Gentile', year:2019, sem:'spring', ovr:83},
+  {name:'Shaum Arora', year:2019, sem:'fall', ovr:73},{name:'Alex Beglan', year:2019, sem:'fall', ovr:83},{name:'Robert Begley', year:2019, sem:'fall', ovr:76},{name:'Thomas Delaney', year:2019, sem:'fall', ovr:69},{name:'Nick Demarco', year:2019, sem:'fall', ovr:77},{name:'Ryan Hyman', year:2019, sem:'fall', ovr:89},{name:'Haise Johnston', year:2019, sem:'fall', ovr:88},{name:'Peter Rivelli', year:2019, sem:'fall', ovr:89},{name:'Jake Roberts', year:2019, sem:'fall', ovr:82},{name:'Luke Sermarini', year:2019, sem:'fall', ovr:94},
+  {name:'Patrick Jennings', year:2020, sem:'fall', ovr:87},{name:'Ryan Kosinski', year:2020, sem:'fall', ovr:88},{name:'Jack Noteboom', year:2020, sem:'fall', ovr:82},{name:'Pat Oniate', year:2020, sem:'fall', ovr:86},{name:"Sean O'Neil", year:2020, sem:'fall', ovr:87},{name:'Kyle Silverstein', year:2020, sem:'fall', ovr:89},{name:'Harry Williamson', year:2020, sem:'fall', ovr:84},
+  {name:'Ben Guller', year:2021, sem:'spring', ovr:85},{name:'Derek Jocelyn', year:2021, sem:'spring', ovr:95},{name:'Devon Pollock', year:2021, sem:'spring', ovr:88},{name:'Gabe Kear', year:2021, sem:'spring', ovr:81},{name:'Luke Matheson', year:2021, sem:'spring', ovr:83},{name:'Aryan Chandwani', year:2021, sem:'spring', ovr:92},{name:'Charlie Johnson', year:2021, sem:'spring', ovr:74},{name:'Joey Mazzio', year:2021, sem:'spring', ovr:86},
+  {name:'Marco Zarzano', year:2021, sem:'fall', ovr:89},{name:'Brandon Salita', year:2021, sem:'fall', ovr:99},{name:'Carter Shook', year:2021, sem:'fall', ovr:90},{name:'Dan Egan', year:2021, sem:'fall', ovr:85},{name:'Drew Von Kollmar', year:2021, sem:'fall', ovr:88},{name:'Emonefe Ewubare', year:2021, sem:'fall', ovr:93},{name:'Frank Mallia', year:2021, sem:'fall', ovr:91},{name:'Jason King', year:2021, sem:'fall', ovr:86},{name:'Josh Minion', year:2021, sem:'fall', ovr:87},{name:'Julian Decicci', year:2021, sem:'fall', ovr:85},{name:'Manny Polanco', year:2021, sem:'fall', ovr:86},{name:'Mason Steward', year:2021, sem:'fall', ovr:85},{name:'Ryan Lee', year:2021, sem:'fall', ovr:88},{name:'Ryley Marker', year:2021, sem:'fall', ovr:91},{name:'Zach Berkley', year:2021, sem:'fall', ovr:88},
+  {name:'JD Calderone', year:2022, sem:'spring', ovr:82},{name:'Abe Factor', year:2022, sem:'spring', ovr:85},{name:'Gavin Collier', year:2022, sem:'spring', ovr:91},{name:'Levi Smith', year:2022, sem:'spring', ovr:81},{name:'Luc Blancato', year:2022, sem:'spring', ovr:76},{name:'Luca Fimmano', year:2022, sem:'spring', ovr:88},{name:'Mark McMillan', year:2022, sem:'spring', ovr:88},{name:'Michael Logar', year:2022, sem:'spring', ovr:87},
+  {name:'Nestor Iljoski', year:2022, sem:'fall', ovr:91},{name:'Drew Ramirez', year:2022, sem:'fall', ovr:92},{name:'Elijah Suissa', year:2022, sem:'fall', ovr:83},{name:'Mike Brown', year:2022, sem:'fall', ovr:86},{name:'Stephen Sherlock', year:2022, sem:'fall', ovr:79},{name:'Vasan Ilango', year:2022, sem:'fall', ovr:89},{name:'William Naismith', year:2022, sem:'fall', ovr:90},{name:'Xavion Crosby', year:2022, sem:'fall', ovr:89},{name:'Zain Bari', year:2022, sem:'fall', ovr:89},
+  {name:'Dan Price', year:2023, sem:'spring', ovr:89},{name:'Abhinav Dutta', year:2023, sem:'spring', ovr:60},{name:'Benny Branyan', year:2023, sem:'spring', ovr:82},{name:'Tyler Newsome', year:2023, sem:'spring', ovr:84},{name:'Jordan Moody', year:2023, sem:'spring', ovr:79},
+  {name:'Quinn Chryss Connell', year:2023, sem:'fall', ovr:86},{name:'Alex Poulhaus', year:2023, sem:'fall', ovr:87},{name:'Daniel Gittleman', year:2023, sem:'fall', ovr:90},{name:'Ian Carpenter', year:2023, sem:'fall', ovr:82},{name:'Ian Murphy', year:2023, sem:'fall', ovr:79},{name:'Jake Vedova', year:2023, sem:'fall', ovr:83},{name:'James Canty', year:2023, sem:'fall', ovr:87},{name:'Julian Diehl', year:2023, sem:'fall', ovr:89},{name:'Max Feldman', year:2023, sem:'fall', ovr:84},{name:'Mike Townsend', year:2023, sem:'fall', ovr:79},{name:'Owen Gilson', year:2023, sem:'fall', ovr:92},{name:'Reyhaan Yadav', year:2023, sem:'fall', ovr:90},{name:'Xavier Schaffer', year:2023, sem:'fall', ovr:81},
+  {name:'Brian Alvin', year:2024, sem:'spring', ovr:89},{name:'Charlie Frantz', year:2024, sem:'spring', ovr:87},{name:'George Hansen', year:2024, sem:'spring', ovr:76},{name:'Nate Jarrow', year:2024, sem:'spring', ovr:75},{name:'Neel Nag', year:2024, sem:'spring', ovr:75},{name:'Toby Tang', year:2024, sem:'spring', ovr:80},{name:'Zach Marsden', year:2024, sem:'spring', ovr:83},
+  {name:'Connor Byrnes', year:2024, sem:'fall', ovr:92},{name:'Hayden Pollock', year:2024, sem:'fall', ovr:80},{name:'Jaden Gerstein', year:2024, sem:'fall', ovr:77},{name:'Joey Solfanelli', year:2024, sem:'fall', ovr:82},{name:'Lucas Jennis', year:2024, sem:'fall', ovr:85},{name:'Sean Connor', year:2024, sem:'fall', ovr:67},
+  {name:'Simon Olstaad', year:2025, sem:'spring', ovr:70},{name:'Alan Varghase', year:2025, sem:'spring', ovr:83},{name:'Charlie Hess', year:2025, sem:'spring', ovr:80},{name:'David Weyer', year:2025, sem:'spring', ovr:79},{name:'Elliot Jones', year:2025, sem:'spring', ovr:75},{name:'Ryno Boates', year:2025, sem:'spring', ovr:75},{name:'Tyler Robinson', year:2025, sem:'spring', ovr:75},
+  {name:'Luke Ryan', year:2025, sem:'fall', ovr:81},{name:'Arnav Patel', year:2025, sem:'fall', ovr:86},{name:'Coen Gotro', year:2025, sem:'fall', ovr:91},{name:'Connor Burke', year:2025, sem:'fall', ovr:87},{name:'Davin Stultz', year:2025, sem:'fall', ovr:85},{name:'Mateo Arumbula', year:2025, sem:'fall', ovr:77},{name:'Mateo Daniels', year:2025, sem:'fall', ovr:69},{name:'Max Drachler', year:2025, sem:'fall', ovr:84},{name:'Nate Forrest', year:2025, sem:'fall', ovr:80},{name:'Sam Baldwin', year:2025, sem:'fall', ovr:83},{name:'Tyler Smith', year:2025, sem:'fall', ovr:75},
+  {name:'Johnny McCracken', year:2026, sem:'spring', ovr:79},{name:'Kevin Grady', year:2026, sem:'spring', ovr:80},{name:'Armstrong Armstrong', year:2026, sem:'spring', ovr:78},{name:'Chase Kurtz', year:2026, sem:'spring', ovr:62},{name:'David Libertoire', year:2026, sem:'spring', ovr:77},{name:'Lukas Koplakkounpo', year:2026, sem:'spring', ovr:84},{name:'Marcelo Friere', year:2026, sem:'spring', ovr:79}
+];
+
+const el = id => document.getElementById(id);
+const confettiLayer = el('confettiLayer');
+const seasons = ['fall','spring'];
+const years = [2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+
+function shuffle(arr){ return arr.map(v => ({v, r: Math.random()})).sort((a,b) => a.r - b.r).map(x => x.v); }
+function grade(o){
+  if(o>=96)return'A+';if(o>=93)return'A';if(o>=90)return'A-';if(o>=87)return'B+';if(o>=83)return'B';if(o>=80)return'B-';if(o>=77)return'C+';if(o>=73)return'C';if(o>=70)return'C-';if(o>=67)return'D+';if(o>=63)return'D';if(o>=60)return'D-';return'F';
+}
+function record(sum){if(sum>=370)return'78-0';const diff=370-sum;const losses=Math.ceil(diff/2);const wins=78-losses;return`${wins}-${losses}`;}
+function genRoomCode(){return Math.random().toString(36).substring(2, 8).toUpperCase();}
+function updateConnectionStatus(connected){el('connectionStatus').className='connectionStatus '+(connected?'connected':'disconnected');el('connectionStatus').textContent=(connected?'●':'●')+' '+(connected?'Connected':'Disconnected');}
+
+function showSection(section){
+  document.querySelectorAll('[id$="Section"]').forEach(s => s.classList.add('hidden'));
+  el(section + 'Section').classList.remove('hidden');
+}
+
+function showCreateScreen(){
+  showSection('create');
+}
+
+function showJoinScreen(){
+  showSection('join');
+}
+
+function backToLobby(){
+  el('lobbyScreen').classList.remove('hidden');
+  el('gameScreen').classList.add('hidden');
+  el('revealCard').classList.add('hidden');
+  showSection('');
+  roomCode = '';
+  myPlayerId = '';
+}
+
+async function createGame(){
+  const name = el('createName').value.trim();
+  if(!name) return alert('Enter your name');
+  playerName = name;
+  
+  roomCode = genRoomCode();
+  myPlayerNum = 1;
+  
+  const gameData = {
+    p1: {name, id: Math.random().toString(36).substring(7)},
+    p2: null,
+    order: shuffle(['fall','spring','fall','spring']),
+    available: roster.map(r => r.name),
+    picks: [{}, {}],
+    currentPlayer: 1,
+    status: 'waiting',
+    respinUsed: [[false, false], [false, false]]
+  };
+  
+  myPlayerId = gameData.p1.id;
+  
+  await db.ref('rooms/' + roomCode).set(gameData);
+  
+  el('displayRoomCode').textContent = roomCode;
+  showSection('waiting');
+  
+  // Wait for opponent
+  db.ref('rooms/' + roomCode + '/p2').on('value', snap => {
+    if(snap.val()) {
+      el('lobbyScreen').classList.add('hidden');
+      el('gameScreen').classList.remove('hidden');
+      startGameMultiplayer();
+    }
+  });
+}
+
+async function joinGame(){
+  const name = el('playerName').value.trim();
+  const code = el('roomCode').value.toUpperCase();
+  if(!name) return alert('Enter your name');
+  if(!code) return alert('Enter room code');
+  
+  playerName = name;
+  roomCode = code;
+  myPlayerNum = 2;
+  myPlayerId = Math.random().toString(36).substring(7);
+  
+  try {
+    const snap = await db.ref('rooms/' + code).once('value');
+    if(!snap.exists()) return alert('Room not found');
+    
+    await db.ref('rooms/' + code + '/p2').set({name, id: myPlayerId});
+    
+    el('lobbyScreen').classList.add('hidden');
+    el('gameScreen').classList.remove('hidden');
+    startGameMultiplayer();
+  } catch(e) {
+    alert('Error joining room: ' + e.message);
+  }
+}
+
+function startGameMultiplayer(){
+  const gameRef = db.ref('rooms/' + roomCode);
+  
+  gameRef.on('value', snap => {
+    gameState = snap.val();
+    if(gameState && gameState.status === 'finished') {
+      showResults();
+    } else {
+      updateUIMultiplayer();
+    }
+  });
+}
+
+function updateUIMultiplayer(){
+  if(!gameState) return;
+  
+  const totalPicks = Object.keys(gameState.picks[0]).length + Object.keys(gameState.picks[1]).length;
+  const isMyTurn = gameState.currentPlayer === myPlayerNum;
+  
+  el('pickNum').textContent = totalPicks + 1;
+  el('turnIndicator').className = 'turnIndicator ' + (isMyTurn ? '' : 'p2');
+  el('turnIndicator').innerHTML = (isMyTurn ? '✓ Your Turn' : '⏳ Opponent\'s Turn') + ' - Pick #<span id="pickNum">' + (totalPicks + 1) + '</span>';
+  el('opponentWaitingMsg').classList.toggle('hidden', isMyTurn);
+  el('spinBtn').disabled = !isMyTurn;
+  
+  const p1Name = gameState.p1.name;
+  const p2Name = gameState.p2.name;
+  const p1Picks = Object.values(gameState.picks[0]);
+  const p2Picks = Object.values(gameState.picks[1]);
+  
+  el('p1Label').textContent = `${p1Name} (${p1Picks.length}/4)`;
+  el('p2Label').textContent = `${p2Name} (${p2Picks.length}/4)`;
+  
+  el('p1Picks').innerHTML = p1Picks.length === 0 ? 'No picks yet.' : p1Picks.map((p,i) => `<div class="badge">${i+1}. ${p.name} — ${p.year} ${p.sem}</div>`).join(' ');
+  el('p2Picks').innerHTML = p2Picks.length === 0 ? 'No picks yet.' : p2Picks.map((p,i) => `<div class="badge">${i+1}. ${p.name} — ${p.year} ${p.sem}</div>`).join(' ');
+}
+
+async function spinWheelMultiplayer(){
+  if(!gameState || gameState.currentPlayer !== myPlayerNum) return;
+  el('spinBtn').disabled = true;
+  
+  const totalPicks = Object.keys(gameState.picks[0]).length + Object.keys(gameState.picks[1]).length;
+  const neededSem = gameState.order[totalPicks];
+  const validYears = getValidYears(neededSem);
+  
+  if(!validYears.length) return;
+  
+  const selectedYear = validYears[Math.floor(Math.random() * validYears.length)];
+  
+  await db.ref('rooms/' + roomCode + '/currentSpin').set({
+    year: selectedYear,
+    sem: neededSem,
+    spinning: true
+  });
+}
+
+function getValidYears(sem){
+  return [...new Set(
+    gameState.available
+      .map(name => roster.find(r => r.name === name))
+      .filter(p => p && p.sem === sem)
+      .map(p => p.year)
+  )].filter(y => !(y === 2020 && sem === 'spring')).sort((a,b)=>a-b);
+}
+
+async function pickPlayerMultiplayer(playerName){
+  if(!gameState || gameState.currentPlayer !== myPlayerNum) return;
+  
+  const playerIdx = myPlayerNum - 1;
+  const pickKey = 'pick' + (Object.keys(gameState.picks[playerIdx]).length + 1);
+  const player = roster.find(r => r.name === playerName);
+  
+  const updates = {};
+  updates['rooms/' + roomCode + '/picks/' + playerIdx + '/' + pickKey] = player;
+  updates['rooms/' + roomCode + '/available'] = gameState.available.filter(n => n !== playerName);
+  
+  const p1Total = Object.values(gameState.picks[0]).reduce((a,p) => a + p.ovr, 0) + (playerIdx === 0 ? player.ovr : 0);
+  const p2Total = Object.values(gameState.picks[1]).reduce((a,p) => a + p.ovr, 0) + (playerIdx === 1 ? player.ovr : 0);
+  
+  if(Object.keys(gameState.picks[0]).length + Object.keys(gameState.picks[1]).length === 7) {
+    updates['rooms/' + roomCode + '/status'] = 'finished';
+    updates['rooms/' + roomCode + '/finalScores'] = {p1: p1Total, p2: p2Total};
+  } else {
+    updates['rooms/' + roomCode + '/currentPlayer'] = gameState.currentPlayer === 1 ? 2 : 1;
+  }
+  
+  updates['rooms/' + roomCode + '/wheelBox'] = null;
+  updates['rooms/' + roomCode + '/poolBox'] = null;
+  
+  await db.ref().update(updates);
+}
+
+function showResults(){
+  el('gameScreen').classList.add('hidden');
+  el('revealCard').classList.remove('hidden');
+  el('revealCard').classList.add('show');
+  
+  const p1Picks = Object.values(gameState.picks[0]);
+  const p2Picks = Object.values(gameState.picks[1]);
+  const p1Total = gameState.finalScores.p1;
+  const p2Total = gameState.finalScores.p2;
+  
+  let winner = '';
+  if(p1Total > p2Total) winner = gameState.p1.name;
+  else if(p2Total > p1Total) winner = gameState.p2.name;
+  else winner = 'Tie';
+  
+  el('winnerBanner').innerHTML = winner === 'Tie' ? '🏆 It\'s a Tie! 🏆' : `🏆 ${winner} Wins! 🏆`;
+  
+  el('finalCompare').innerHTML = `
+    <div class="finalPlayer ${p1Total > p2Total ? 'winner' : ''}">
+      <div class="finalPlayerName">${gameState.p1.name}</div>
+      <div class="finalPlayerDraft">
+        ${p1Picks.map((p,i) => `<div class="finalDraftItem"><div class="finalDraftName">${i+1}. ${p.name}</div><div class="finalDraftMeta">${p.year} ${p.sem} • ${grade(p.ovr)}</div></div>`).join('')}
+      </div>
+      <div class="finalScore">
+        <div class="finalScoreLabel">Total</div>
+        <div class="finalScoreNum">${p1Total}</div>
+      </div>
+    </div>
+    <div class="finalPlayer ${p2Total > p1Total ? 'winner' : ''}">
+      <div class="finalPlayerName">${gameState.p2.name}</div>
+      <div class="finalPlayerDraft">
+        ${p2Picks.map((p,i) => `<div class="finalDraftItem"><div class="finalDraftName">${i+1}. ${p.name}</div><div class="finalDraftMeta">${p.year} ${p.sem} • ${grade(p.ovr)}</div></div>`).join('')}
+      </div>
+      <div class="finalScore">
+        <div class="finalScoreLabel">Total</div>
+        <div class="finalScoreNum">${p2Total}</div>
+      </div>
+    </div>
+  `;
+  
+  fireConfetti();
+}
+
+function fireConfetti(){
+  confettiLayer.innerHTML = '';
+  const colors = ['#ffd24a','#69f0ae','#7ec8ff','#ff7bd1','#ffffff'];
+  for(let i=0;i<140;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.setProperty('--x', (Math.random()*8 - 4) + 'vw');
+    c.style.setProperty('--drift', (Math.random()*20 - 10) + 'vw');
+    c.style.animationDuration = (2.7 + Math.random()*1.7) + 's';
+    c.style.animationDelay = (Math.random()*0.5) + 's';
+    c.style.opacity = (0.8 + Math.random()*0.2).toFixed(2);
+    confettiLayer.appendChild(c);
+  }
+  confettiLayer.classList.add('show');
+  setTimeout(() => {
+    confettiLayer.classList.remove('show');
+    setTimeout(() => { confettiLayer.innerHTML = ''; }, 900);
+  }, 3500);
+}
+
+function saveImage(){
+  const target = document.querySelector('.finalPanel');
+  if(!target || typeof html2canvas === 'undefined') return;
+  html2canvas(target, {backgroundColor:null, scale:2, useCORS:true}).then(canvas => {
+    canvas.toBlob(blob => {
+      if(!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '78-0-draft-battle.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  });
+}
+
+document.body.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-action]');
+  if(!a) return;
+  const act = a.dataset.action;
+  if(act === 'showCreate') showCreateScreen();
+  if(act === 'showJoin') showJoinScreen();
+  if(act === 'createGame') createGame();
+  if(act === 'joinGame') joinGame();
+  if(act === 'backToLobby') backToLobby();
+  if(act === 'spin') spinWheelMultiplayer();
+  if(act === 'pick') pickPlayerMultiplayer(a.dataset.player);
+  if(act === 'saveImage') saveImage();
+});
+</script>
+</body>
+</html>
